@@ -5,7 +5,7 @@ services:
     build: .
     container_name: family-hub
     ports:
-      - "8088:3000"
+      - "8086:3000"
     volumes:
       - ./data:/data
     environment:
@@ -14,7 +14,7 @@ services:
       - DATA_DIR=/data
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:8088/api/calendar/auth/callback}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://192.168.0.243.nip.io:8086/api/calendar/auth/callback}
       - WEATHER_API_KEY=${WEATHER_API_KEY}
       - WEATHER_LOCATION=${WEATHER_LOCATION:-Toronto,CA}
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
