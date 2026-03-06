@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  familyhub:
+    build: .
+    container_name: family-hub
+    ports:
+      - "8088:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATA_DIR=/data
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:8088/api/calendar/auth/callback}
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - WEATHER_LOCATION=${WEATHER_LOCATION:-Toronto,CA}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_EMAIL=${VAPID_EMAIL:-mailto:admin@familyhub.local}
+    restart: unless-stopped

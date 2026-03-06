@@ -1,0 +1,61 @@
+/* Global touch-friendly styles for Family Hub */
+
+/* Smooth scrolling everywhere */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text selection on touch (except inputs) */
+body {
+  -webkit-tap-highlight-color: rgba(124, 170, 189, 0.15);
+  -webkit-touch-callout: none;
+  overscroll-behavior: none;
+}
+
+/* Smooth scroll for all scrollable areas */
+[style*="overflow: auto"], [style*="overflow-y: auto"] {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Active/pressed state for all buttons */
+button:active {
+  transform: scale(0.97) !important;
+  opacity: 0.85 !important;
+  transition: transform 0.05s ease, opacity 0.05s ease !important;
+}
+
+/* Larger touch targets for inputs */
+input, select, textarea {
+  min-height: 44px;
+  font-size: 16px !important; /* prevents iOS zoom on focus */
+}
+
+/* Disable double-tap zoom */
+html {
+  touch-action: manipulation;
+}
+
+/* No hover effects on touch — use active instead */
+@media (hover: none) and (pointer: coarse) {
+  button:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Scrollbar styling for touch — thinner, less intrusive */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D0CFC9;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9B9A95;
+}
