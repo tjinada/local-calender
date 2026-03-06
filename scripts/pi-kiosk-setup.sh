@@ -17,11 +17,16 @@ echo "Target URL: $HUB_URL"
 apt-get update && apt-get upgrade -y
 
 # Install X server, Chromium, and utilities
+# Try chromium first (newer Pi OS), fall back to chromium-browser
 apt-get install -y --no-install-recommends \
   xserver-xorg x11-xserver-utils xinit \
-  chromium-browser \
   unclutter \
   sed
+apt-get install -y chromium || apt-get install -y chromium-browser
+
+# Detect which binary is available
+CHROMIUM_BIN=$(which chromium || which chromium-browser)
+echo "Using Chromium at: $CHROMIUM_BIN"
 
 # Create kiosk user if it doesn't exist
 if ! id -u kiosk >/dev/null 2>&1; then
@@ -54,8 +59,8 @@ while ! ping -c 1 -W 2 192.168.0.243 > /dev/null 2>&1; do
   sleep 2
 done
 
-# Start Chromium in kiosk mode
-chromium-browser \\
+# Start Chromium in kiosk mode with virtual keyboard
+$CHROMIUM_BIN \\
   --noerrdialogs \\
   --disable-infobars \\
   --kiosk \\
@@ -68,10 +73,11 @@ chromium-browser \\
   --disable-session-crashed-bubble \\
   --autoplay-policy=no-user-gesture-required \\
   --check-for-update-interval=31536000 \\
-  --enable-features=OverlayScrollbar \\
+  --enable-features=OverlayScrollbar,VirtualKeyboard \\
   --force-device-scale-factor=1.0 \\
   --touch-events=enabled \\
   --enable-touch-drag-drop \\
+  --enable-virtual-keyboard \\
   "$HUB_URL"
 EOF
 chown kiosk:kiosk /home/kiosk/.xinitrc
@@ -84,10 +90,6 @@ if [ -z "$DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
 fi
 EOF
 chown kiosk:kiosk /home/kiosk/.bash_profile
-
-# Rotate screen if needed (landscape is default for UPERFECT 18.5")
-# Uncomment the line below if your display is mounted in portrait:
-# echo "display_rotate=1" >> /boot/config.txt
 
 # GPU memory for smoother rendering
 if ! grep -q "gpu_mem=" /boot/config.txt; then
@@ -124,6 +126,8 @@ echo "=== Setup Complete ==="
 echo ""
 echo "The Pi will auto-boot into full-screen Chromium showing:"
 echo "  $HUB_URL"
+echo ""
+echo "Virtual keyboard will appear when you tap any text input."
 echo ""
 echo "To change the URL later, edit /home/kiosk/.xinitrc"
 echo "To adjust zoom, change --force-device-scale-factor in .xinitrc"
