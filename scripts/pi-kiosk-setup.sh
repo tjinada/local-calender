@@ -4,11 +4,11 @@
 # ============================================
 # Run this script on a fresh Raspbian Lite install.
 # Usage: sudo bash pi-kiosk-setup.sh <FAMILY_HUB_URL>
-# Example: sudo bash pi-kiosk-setup.sh http://192.168.1.100:8088
+# Example: sudo bash pi-kiosk-setup.sh http://192.168.0.243:8086
 
 set -e
 
-HUB_URL="${1:-http://localhost:8088}"
+HUB_URL="${1:-http://192.168.0.243:8086}"
 
 echo "=== Family Hub Kiosk Setup ==="
 echo "Target URL: $HUB_URL"
@@ -40,13 +40,19 @@ EOF
 cat > /home/kiosk/.xinitrc << EOF
 #!/bin/bash
 
-# Disable screen blanking
+# Disable screen blanking and power management
 xset s off
 xset s noblank
 xset -dpms
 
 # Hide cursor after 3 seconds of inactivity
 unclutter -idle 3 -root &
+
+# Wait for network connectivity before launching browser
+while ! ping -c 1 -W 2 192.168.0.243 > /dev/null 2>&1; do
+  echo "Waiting for network..."
+  sleep 2
+done
 
 # Start Chromium in kiosk mode
 chromium-browser \\
@@ -62,6 +68,10 @@ chromium-browser \\
   --disable-session-crashed-bubble \\
   --autoplay-policy=no-user-gesture-required \\
   --check-for-update-interval=31536000 \\
+  --enable-features=OverlayScrollbar \\
+  --force-device-scale-factor=1.0 \\
+  --touch-events=enabled \\
+  --enable-touch-drag-drop \\
   "$HUB_URL"
 EOF
 chown kiosk:kiosk /home/kiosk/.xinitrc
@@ -75,10 +85,48 @@ fi
 EOF
 chown kiosk:kiosk /home/kiosk/.bash_profile
 
-# Optional: nightly reboot at 3 AM for stability
+# Rotate screen if needed (landscape is default for UPERFECT 18.5")
+# Uncomment the line below if your display is mounted in portrait:
+# echo "display_rotate=1" >> /boot/config.txt
+
+# GPU memory for smoother rendering
+if ! grep -q "gpu_mem=" /boot/config.txt; then
+  echo "gpu_mem=128" >> /boot/config.txt
+fi
+
+# Disable Raspberry Pi splash screen for cleaner boot
+if ! grep -q "disable_splash" /boot/config.txt; then
+  echo "disable_splash=1" >> /boot/config.txt
+fi
+
+# Nightly reboot at 3 AM for stability
 (crontab -l 2>/dev/null; echo "0 3 * * * /sbin/reboot") | crontab -
+
+# Auto-restart Chromium if it crashes
+cat > /home/kiosk/watchdog.sh << 'WATCHDOG'
+#!/bin/bash
+while true; do
+  if ! pgrep -x "chromium-browse" > /dev/null; then
+    echo "Chromium crashed, restarting X..."
+    sudo systemctl restart getty@tty1
+  fi
+  sleep 30
+done
+WATCHDOG
+chown kiosk:kiosk /home/kiosk/watchdog.sh
+chmod +x /home/kiosk/watchdog.sh
+
+# Add watchdog to cron
+(crontab -u kiosk -l 2>/dev/null; echo "@reboot /home/kiosk/watchdog.sh &") | crontab -u kiosk -
 
 echo ""
 echo "=== Setup Complete ==="
-echo "Reboot to start kiosk mode: sudo reboot"
-echo "The Pi will auto-boot into Chromium showing: $HUB_URL"
+echo ""
+echo "The Pi will auto-boot into full-screen Chromium showing:"
+echo "  $HUB_URL"
+echo ""
+echo "To change the URL later, edit /home/kiosk/.xinitrc"
+echo "To adjust zoom, change --force-device-scale-factor in .xinitrc"
+echo "  (try 1.1 or 1.2 if text feels small)"
+echo ""
+echo "Reboot now: sudo reboot"
