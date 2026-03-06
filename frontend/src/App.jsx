@@ -5,6 +5,7 @@ import CalendarView from "./pages/CalendarView";
 import MealPlanning from "./pages/MealPlanning";
 import SharedLists from "./pages/SharedLists";
 import SettingsPage from "./pages/SettingsPage";
+import VirtualKeyboard from "./components/VirtualKeyboard";
 import { theme } from "./styles/theme";
 
 function AppLayout() {
@@ -33,6 +34,7 @@ function AppLayout() {
         <Route path="/photos" element={<PlaceholderPage title="📸 Photos" subtitle="Coming soon" />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Routes>
+      <VirtualKeyboard />
     </div>
   );
 }
